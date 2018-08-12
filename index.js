@@ -1,4 +1,4 @@
-const loki = require('lokijs');
+const Loki = require('lokijs');
 
 const _types = {
     ANY:        value => value,
@@ -59,8 +59,8 @@ class Jotnar extends Loki {
             _nonStrict: allowExtraProperties
         };
 
-        if (prop.meta) throw new Error("Declaration of reserved property 'meta' not allowed");
-        if (prop.$loki) throw new Error("Declaration of reserved property '$loki' not allowed");
+        if (definition.meta) throw new Error("Declaration of reserved property 'meta' not allowed");
+        if (definition.$loki) throw new Error("Declaration of reserved property '$loki' not allowed");
 
         for (let prop in definition) {
             if (typeof definition[prop] === 'object') {
@@ -87,6 +87,9 @@ class Jotnar extends Loki {
         }
         this.models[name]._collection.uniqueNames = this.models[name]._unique;
 
+        self.models[name]._collection._insert = self.models[name]._collection.insert;
+        self.models[name]._collection._update = self.models[name]._collection.update;
+
         /**
          * Inserts an object or array of objects in the collection
          * @param {object|object[]} object Object or array of objects to insert
@@ -111,42 +114,42 @@ class Jotnar extends Loki {
                 }
                 listToInsert.push(toInsert);
             }
-            return self.models[name]._collection.insert(listToInsert);
+            return self.models[name]._collection._insert(listToInsert);
         }
-        this.models[name].insert = insert;
+        self.models[name]._collection.insert = insert;
 
         function update (object) {
-            let objects = Array.isArray(object) ? object : [object];
-            let listToUpdate = [];
-            for (let obj of objects) {
-                let toUpdate = {};
-                for (let prop in obj) {
-                    if (self.models[name]._scheme[prop]) {
-                        toUpdate[prop] = self.models[name]._scheme[prop].parse(obj[prop]);
-                    } else if (self.models[name]._nonStrict) {
-                        toUpdate[prop] = obj[prop];
-                    }
-                }
-                for (let prop in self.models[name]._defaultObject) {
-                     // null == undefined
-                    if (toUpdate[prop] == null && self.models[name]._scheme[prop].notNull) {
-                        throw new Error(`Not null constraint failed for property '${prop}' of collection '${name}'.`);
-                    }
-                }
-                toUpdate.meta = obj.meta;
-                toUpdate.$loki = obj.$loki;
-                listToUpdate.push(toUpdate);
+            if (Array.isArray(object)) {
+                return self.models[name]._collection._update(object);
             }
-            return self.models[name]._collection.update(listToUpdate);
+
+            let toUpdate = {};
+            for (let prop in object) {
+                if (self.models[name]._scheme[prop]) {
+                    toUpdate[prop] = self.models[name]._scheme[prop].parse(object[prop]);
+                } else if (self.models[name]._nonStrict) {
+                    toUpdate[prop] = object[prop];
+                }
+            }
+            for (let prop in self.models[name]._defaultObject) {
+                    // null == undefined
+                if (toUpdate[prop] == null && self.models[name]._scheme[prop].notNull) {
+                    throw new Error(`Not null constraint failed for property '${prop}' of collection '${name}'.`);
+                }
+            }
+            toUpdate.meta = object.meta;
+            toUpdate.$loki = object.$loki;
+
+            return self.models[name]._collection._update(toUpdate);
         }
-        this.models[name].update = update;
+        self.models[name]._collection.update = update;
 
 
-        return this.models[name];
+        return this.models[name]._collection;
     }
 
     getModel (name) {
-        return this.models[name];
+        return this.models[name] ? this.models[name]._collection : null;
     }
 }
 
