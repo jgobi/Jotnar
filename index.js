@@ -24,8 +24,19 @@ class Jotnar {
      * Defines a new model
      * @param {string} name Model's name
      * @param {object} definition Model's properties definitions
-     * @param {boolean} allowExtraProperties If more properties are passed to
+     * @param {boolean} [allowExtraProperties=false] If more properties are passed to
      * the insert function, they should be ignored (false) or included (true)?
+     * 
+     * @example
+     * db.define('modelName', {
+     *     property1: db.INTEGER,
+     *     property2: {
+     *         type: db.ANY,
+     *         allowNull: true,
+     *         defaultValue: null
+     *         unique: false
+     *     }
+     * }, true);
      */
     define (name, definition, allowExtraProperties) {
         let self = this;
