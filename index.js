@@ -9,14 +9,14 @@ const _types = {
     DATE:       value => value instanceof Date ? value : (value == null ? null : new Date(value))
 };
 
-class Jotnar {
+class Jotnar extends Loki {
     /**
-     * 
-     * @param {Loki} lokiDatabase LokiJS instance
+     * The main database class
+     * @param {string} filename Name of the database
+     * @param {object} options Loki options
      */
-    constructor (lokiDatabase) {
-        this._database = lokiDatabase;
-
+    constructor (filename, options) {
+        super(filename, options);
         this.models = {};
     }
 
@@ -59,6 +59,9 @@ class Jotnar {
             _nonStrict: allowExtraProperties
         };
 
+        if (prop.meta) throw new Error("Declaration of reserved property 'meta' not allowed");
+        if (prop.$loki) throw new Error("Declaration of reserved property '$loki' not allowed");
+
         for (let prop in definition) {
             if (typeof definition[prop] === 'object') {
                 if (definition[prop].unique) this.models[name]._unique.push(prop);
@@ -76,9 +79,9 @@ class Jotnar {
             }
         }
 
-        this.models[name]._collection = this._database.getCollection(name);
+        this.models[name]._collection = this.getCollection(name);
         if (!this.models[name]._collection) {
-            this.models[name]._collection = this._database.addCollection(name, {
+            this.models[name]._collection = this.addCollection(name, {
                 unique: this.models[name]._unique
             });
         }
@@ -100,9 +103,9 @@ class Jotnar {
                         toInsert[prop] = obj[prop];
                     }
                 }
-                for (let prop in toInsert) {
+                for (let prop in self.models[name]._defaultObject) {
                      // null == undefined
-                    if (toInsert[prop] == null && self.models[name]._scheme[prop] && self.models[name]._scheme[prop].notNull) {
+                    if (toInsert[prop] == null && self.models[name]._scheme[prop].notNull) {
                         throw new Error(`Not null constraint failed for property '${prop}' of collection '${name}'.`);
                     }
                 }
@@ -112,6 +115,37 @@ class Jotnar {
         }
         this.models[name].insert = insert;
 
+        function update (object) {
+            let objects = Array.isArray(object) ? object : [object];
+            let listToUpdate = [];
+            for (let obj of objects) {
+                let toUpdate = {};
+                for (let prop in obj) {
+                    if (self.models[name]._scheme[prop]) {
+                        toUpdate[prop] = self.models[name]._scheme[prop].parse(obj[prop]);
+                    } else if (self.models[name]._nonStrict) {
+                        toUpdate[prop] = obj[prop];
+                    }
+                }
+                for (let prop in self.models[name]._defaultObject) {
+                     // null == undefined
+                    if (toUpdate[prop] == null && self.models[name]._scheme[prop].notNull) {
+                        throw new Error(`Not null constraint failed for property '${prop}' of collection '${name}'.`);
+                    }
+                }
+                toUpdate.meta = obj.meta;
+                toUpdate.$loki = obj.$loki;
+                listToUpdate.push(toUpdate);
+            }
+            return self.models[name]._collection.update(listToUpdate);
+        }
+        this.models[name].update = update;
+
+
+        return this.models[name];
+    }
+
+    getModel (name) {
         return this.models[name];
     }
 }
