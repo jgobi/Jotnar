@@ -12,10 +12,10 @@ const _types = {
 class Jotnar {
     /**
      * 
-     * @param {Loki} lokiDB Loki instance
+     * @param {Loki} lokiDatabase LokiJS instance
      */
-    constructor (lokiDB) {
-        this._database = lokiDB;
+    constructor (lokiDatabase) {
+        this._database = lokiDatabase;
 
         this.models = {};
     }
@@ -24,8 +24,14 @@ class Jotnar {
      * Defines a new model
      * @param {string} name Model's name
      * @param {object} definition Model's properties definitions
-     * @param {boolean} [allowExtraProperties=false] If more properties are passed to
-     * the insert function, they should be ignored (false) or included (true)?
+     * @param {object|function} definition.prop Property definition or type parsing function
+     * @param {function} [definition.prop.type=Jotnar.TYPES.ANY] Type parsing function
+     * @param {boolean} [definition.prop.allowNull=true] Set to false to not accept null
+     * @param {boolean} [definition.prop.defaultValue=null] Default value to insert
+     * @param {boolean} [definition.prop.unique=false] If the property is unique, will be
+     * much faster to find items by it, so please turn it true if it's the case.
+     * @param {boolean} [allowExtraProperties=false] If more properties are passed to the
+     * insert function, they should be ignored (false) or included (true)?
      * 
      * @example
      * db.define('modelName', {
