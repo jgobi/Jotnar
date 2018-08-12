@@ -34,10 +34,11 @@ class Jotnar {
      * insert function, they should be ignored (false) or included (true)?
      * 
      * @example
+     * // db is an instance of Jotnar
      * db.define('modelName', {
-     *     property1: db.INTEGER,
+     *     property1: db.TYPES.INTEGER,
      *     property2: {
-     *         type: db.ANY,
+     *         type: db.TYPES.ANY,
      *         allowNull: true,
      *         defaultValue: null
      *         unique: false
