@@ -118,6 +118,10 @@ class Jotnar extends Loki {
         }
         self.models[name]._collection.insert = insert;
 
+        /**
+         * Updates an object or array of objects in the collection
+         * @param {object|object[]} object Object or array of objects to update
+         */
         function update (object) {
             if (Array.isArray(object)) {
                 return self.models[name]._collection._update(object);
@@ -148,6 +152,10 @@ class Jotnar extends Loki {
         return this.models[name]._collection;
     }
 
+    /**
+     * Obtain an existing model
+     * @param {string} name Model's name
+     */
     getModel (name) {
         return this.models[name] ? this.models[name]._collection : null;
     }
