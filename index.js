@@ -2,11 +2,11 @@ const Loki = require('lokijs');
 
 const _types = {
     ANY:        value => value,
-    INTEGER:    value => parseInt(Number(value)),
-    FLOAT:      value => parseFloat(Number(value)),
+    INTEGER:    value => value == null ? null : parseInt(Number(value)),
+    FLOAT:      value => value == null ? null : parseFloat(Number(value)),
     STRING:     value => value == null ? null : value.toString(),
-    BOOLEAN:    value => Boolean(value),
-    DATE:       value => value instanceof Date ? value : (value == null ? null : new Date(value))
+    BOOLEAN:    value => value == null ? null : Boolean(value),
+    DATE:       value => value == null ? null : (value instanceof Date ? value : new Date(value))
 };
 
 class Jotnar extends Loki {
@@ -73,7 +73,7 @@ class Jotnar extends Loki {
             } else {
                 this.models[name]._scheme[prop] = {
                     parse: definition[prop],
-                    notNull: true
+                    notNull: false
                 };
                 this.models[name]._defaultObject[prop] = null;
             }
