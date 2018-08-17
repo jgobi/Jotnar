@@ -24,14 +24,20 @@ class Jotnar extends Loki {
      * Defines a new model
      * @param {string} name Model's name
      * @param {object} definition Model's properties definitions
-     * @param {object|function} definition.prop Property definition or type parsing function
+     * @param {(object|function)} definition.prop Property definition or type parsing function
      * @param {function} [definition.prop.type=Jotnar.TYPES.ANY] Type parsing function
      * @param {boolean} [definition.prop.allowNull=true] Set to false to not accept null
      * @param {boolean} [definition.prop.defaultValue=null] Default value to insert
      * @param {boolean} [definition.prop.unique=false] If the property is unique, will be
      * much faster to find items by it, so please turn it true if it's the case.
-     * @param {boolean} [allowExtraProperties=false] If more properties are passed to the
-     * insert function, they should be ignored (false) or included (true)?
+     * @param {(object|boolean)} [options=false] An Loki Collection configuration object, with the changes below.
+     * Or a boolean, which will be equivalent to the allowExtraProperties property, as below.
+     * Changes:
+     * - added   property   'allowExtraProperties' - If more properties are passed to the insert
+     * function, they should be ignored (false) or included (true)?
+     * - removed property   'unique'
+     * @param {boolean} [options.allowExtraProperties=false] If more properties are passed to
+     * the insert function, they should be ignored (false) or included (true)?
      * 
      * @example
      * // db is an instance of Jotnar
@@ -44,9 +50,22 @@ class Jotnar extends Loki {
      *         unique: false
      *     }
      * }, true);
+     * // another example
+     * db.define('modelName2', {
+     *     property1: db.TYPES.INTEGER,
+     *     property2: {
+     *         type: db.TYPES.ANY,
+     *         allowNull: true,
+     *         defaultValue: null
+     *         unique: false
+     *     }
+     * }, { allowExtraProperties: true, autoUpdate: true });
      */
-    define (name, definition, allowExtraProperties) {
+    define (name, definition, options) {
         let self = this;
+
+        if (!options) options = {};
+        else if (options === true) options = { allowExtraProperties: true };
 
         if (this.models[name])
             throw new Error(`Redefinition of model ${name}`);
@@ -56,7 +75,7 @@ class Jotnar extends Loki {
             _unique: [],
             _scheme: {},
             _defaultObject: {},
-            _nonStrict: allowExtraProperties
+            _nonStrict: options.allowExtraProperties
         };
 
         if (definition.meta) throw new Error("Declaration of reserved property 'meta' not allowed");
@@ -81,9 +100,8 @@ class Jotnar extends Loki {
 
         this.models[name]._collection = this.getCollection(name);
         if (!this.models[name]._collection) {
-            this.models[name]._collection = this.addCollection(name, {
-                unique: this.models[name]._unique
-            });
+            options.unique = this.models[name]._unique;
+            this.models[name]._collection = this.addCollection(name, options);
         }
         this.models[name]._collection.uniqueNames = this.models[name]._unique;
 
@@ -92,7 +110,7 @@ class Jotnar extends Loki {
 
         /**
          * Inserts an object or array of objects in the collection
-         * @param {object|object[]} object Object or array of objects to insert
+         * @param {(object|object[])} object Object or array of objects to insert
          */
         function insert (object) {
             let objects = Array.isArray(object) ? object : [object];
@@ -120,7 +138,7 @@ class Jotnar extends Loki {
 
         /**
          * Updates an object or array of objects in the collection
-         * @param {object|object[]} object Object or array of objects to update
+         * @param {(object|object[])} object Object or array of objects to update
          */
         function update (object) {
             if (Array.isArray(object)) {
