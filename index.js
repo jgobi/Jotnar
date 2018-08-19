@@ -177,6 +177,27 @@ class Jotnar extends Loki {
     getModel (name) {
         return this.models[name] ? this.models[name]._collection : null;
     }
+
+    /**
+     * serializeReplacer - used to prevent certain properties from being serialized
+     *
+     */
+    serializeReplacer (key, value) {
+        switch (key) {
+            case 'autosaveHandle':
+            case 'persistenceAdapter':
+            case 'constraints':
+            case 'ttl':
+              return null;
+            case 'models':
+            case 'TYPES':
+            case 'throttledSavePending':
+            case 'throttledCallbacks':
+              return undefined;
+            default:
+              return value;
+            }
+    }
 }
 
 Jotnar.TYPES = _types;
